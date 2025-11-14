@@ -1,0 +1,126 @@
+✅ stack.c (FULL IMPLEMENTATION)
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+#include "stack.h"
+
+// PUSH a new car
+Car* push(Car *top, const char *reg, const char *owner) {
+    Car *newCar = (Car*)malloc(sizeof(Car));
+    strcpy(newCar->reg, reg);
+    strcpy(newCar->owner, owner);
+    newCar->arrival = time(NULL);
+    newCar->next = top;
+    return newCar;
+}
+
+// POP the top car
+Car* pop(Car *top, Car **out) {
+    if (!top) {
+        *out = NULL;
+        return NULL;
+    }
+    *out = top;
+    return top->next;
+}
+
+// REMOVE specific car by registration
+Car* removeByReg(Car *top, const char *reg, int *found) {
+    *found = 0;
+
+    if (!top) return NULL;
+
+    // If first car matches
+    if (strcmp(top->reg, reg) == 0) {
+        Car *temp = top->next;
+        *found = 1;
+        free(top);
+        return temp;
+    }
+
+    Car *curr = top->next;
+    Car *prev = top;
+
+    while (curr) {
+        if (strcmp(curr->reg, reg) == 0) {
+            prev->next = curr->next;
+            *found = 1;
+            free(curr);
+            break;
+        }
+        prev = curr;
+        curr = curr->next;
+    }
+
+    return top;
+}
+
+// DISPLAY the stack
+void displayStack(Car *top) {
+    if (!top) {
+        printf("Parking is empty.\n");
+        return;
+    }
+
+    printf("\n--- Parking Stack ---\n");
+    Car *temp = top;
+
+    while (temp) {
+        printf("Reg: %s | Owner: %s | Arrived: %s",
+               temp->reg, temp->owner, ctime(&temp->arrival));
+        temp = temp->next;
+    }
+}
+
+// SAVE stack to file
+void saveToFile(Car *top, const char *filename) {
+    FILE *fp = fopen(filename, "w");
+    if (!fp) return;
+
+    Car *temp = top;
+    while (temp) {
+        fprintf(fp, "%s|%s|%ld\n",
+                temp->reg, temp->owner, temp->arrival);
+        temp = temp->next;
+    }
+
+    fclose(fp);
+}
+
+// LOAD stack from file
+Car* loadFromFile(const char *filename) {
+    FILE *fp = fopen(filename, "r");
+    if (!fp) return NULL;
+
+    Car *top = NULL;
+    char line[200];
+
+    while (fgets(line, sizeof(line), fp)) {
+        char reg[REG_LEN], owner[NAME_LEN];
+        long arrival;
+
+        sscanf(line, "%[^|]|%[^|]|%ld", reg, owner, &arrival);
+
+        Car *newCar = (Car*)malloc(sizeof(Car));
+        strcpy(newCar->reg, reg);
+        strcpy(newCar->owner, owner);
+        newCar->arrival = arrival;
+        newCar->next = top;
+        top = newCar;
+    }
+
+    fclose(fp);
+    return top;
+}
+
+// FREE all nodes
+void freeAll(Car *top) {
+    Car *temp;
+    while (top) {
+        temp = top;
+        top = top->next;
+        free(temp);
+    }
+}
